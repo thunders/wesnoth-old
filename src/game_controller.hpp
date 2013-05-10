@@ -71,6 +71,8 @@ public:
 
 	void show_preferences();
 
+	void load_game_cfg(const bool force=false);
+
 	void launch_game(RELOAD_GAME_DATA reload=RELOAD_DATA);
 	void play_replay();
 
@@ -84,7 +86,6 @@ private:
 	void operator=(const game_controller&);
 
 	bool init_config(const bool force);
-	void load_game_cfg(const bool force=false);
 	void set_unit_data();
 
 	void mark_completed_campaigns(std::vector<config>& campaigns);

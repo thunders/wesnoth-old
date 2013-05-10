@@ -517,7 +517,7 @@ static bool enter_connect_mode(game_display& disp, const config& game_config,
 	return true;
 }
 
-static void enter_create_mode(game_display& disp, const config& game_config, mp::chat& chat, config& gamelist, mp::controller default_controller, bool local_players_only)
+static void enter_create_mode(game_display& disp, const config& game_config, mp::chat& chat, config& gamelist, mp::controller default_controller, bool local_players_only) 
 {
 	DBG_MP << "entering create mode" << std::endl;
 
@@ -686,16 +686,18 @@ static void enter_lobby_mode(game_display& disp, const config& game_config, mp::
 
 namespace mp {
 
-void start_local_game(game_display& disp, const config& game_config,
-		mp::controller default_controller)
+game_controller* gcontr = NULL;
+
+void start_local_game(mp::controller default_controller, game_controller* gcontroller)
 {
 	DBG_MP << "starting local game" << std::endl;
+	gcontr = gcontroller;
 	const rand_rng::set_random_generator generator_setter(&recorder);
 	mp::chat chat;
 	config gamelist;
 	playmp_controller::set_replay_last_turn(0);
 	preferences::set_message_private(false);
-	enter_create_mode(disp, game_config, chat, gamelist, default_controller, true);
+	enter_create_mode(gcontr->disp(), gcontr->game_config(), chat, gamelist, default_controller, true);
 }
 
 void start_local_game_commandline(game_display& disp, const config& game_config,
@@ -823,25 +825,25 @@ void start_local_game_commandline(game_display& disp, const config& game_config,
 	recorder.clear();
 }
 
-void start_client(game_display& disp, const config& game_config,
-		const std::string& host)
+void start_client(const std::string& host, game_controller* gcontroller)
 {
 	DBG_MP << "starting client" << std::endl;
+	gcontr = gcontroller;
 	const rand_rng::set_random_generator generator_setter(&recorder);
 	const network::manager net_manager(1,1);
 
 	mp::chat chat;
 	config gamelist;
-	server_type type = open_connection(disp, host);
+	server_type type = open_connection(gcontr->disp(), host);
 
 	switch(type) {
 	case WESNOTHD_SERVER:
-		enter_lobby_mode(disp, game_config, chat, gamelist);
+		enter_lobby_mode(gcontr->disp(), gcontr->game_config(), chat, gamelist);
 		break;
 	case SIMPLE_SERVER:
 		playmp_controller::set_replay_last_turn(0);
 		preferences::set_message_private(false);
-		enter_wait_mode(disp, game_config, chat, gamelist, false);
+		enter_wait_mode(gcontr->disp(), gcontr->game_config(), chat, gamelist, false);
 		break;
 	case ABORT_SERVER:
 		break;

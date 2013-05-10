@@ -15,6 +15,8 @@
 #define MULTIPLAYER_HPP_INCLUDED
 
 #include "multiplayer_ui.hpp"
+
+#include "game_controller.hpp"
 #include "commandline_options.hpp"
 
 class config;
@@ -24,6 +26,8 @@ namespace mp {
 
 // max. length of a player name
 const size_t max_login_size = 20;
+
+extern game_controller* gcontr;
 
 /*
  * This is the main entry points of multiplayer mode.
@@ -35,8 +39,7 @@ const size_t max_login_size = 20;
  * @param game_config The global, top-level WML configuration for the game
  * @param default_controller The default controller type
  */
-void start_local_game(game_display& disp, const config& game_config,
-		mp::controller default_controller);
+void start_local_game(mp::controller default_controller, game_controller* gcontroller);
 
 /** Starts a multiplayer game in single-user mode.
  *
@@ -52,8 +55,7 @@ void start_local_game_commandline(game_display& disp, const config& game_config,
  * @param game_config The global, top-level WML configuration for the game
  * @param host        The host to connect to.
  */
-void start_client(game_display& disp, const config& game_config,
-		const std::string& host);
+void start_client(const std::string& host, game_controller* gcontroller);
 
 
 }

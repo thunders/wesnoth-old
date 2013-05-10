@@ -382,7 +382,7 @@ SDL_Rect ui::client_area() const
 
 const config& ui::game_config() const
 {
-	return game_config_;
+	return mp::gcontr->game_config();
 }
 
 void ui::draw_contents()

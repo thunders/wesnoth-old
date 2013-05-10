@@ -103,6 +103,7 @@ private:
 	gui::button generator_settings_;
 	gui::button password_button_;
 	gui::button choose_mods_;
+	gui::button choose_campaign_;
 
 	gui::combo era_combo_;
 	gui::combo vision_combo_;

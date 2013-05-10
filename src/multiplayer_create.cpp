@@ -27,6 +27,9 @@
 #include "map.hpp"
 #include "map_exception.hpp"
 #include "map_create.hpp"
+#include "multiplayer.hpp"
+#include "gui/dialogs/campaign_difficulty.hpp"
+#include "gui/dialogs/campaign_selection.hpp"
 #include "gui/dialogs/message.hpp"
 #include "gui/dialogs/mp_create_game_choose_mods.hpp"
 #include "gui/dialogs/mp_create_game_set_password.hpp"
@@ -103,6 +106,7 @@ create::create(game_display& disp, const config &cfg, chat& c, config& gamelist,
 	generator_settings_(disp.video(), _("Settings...")),
 	password_button_(disp.video(), _("Set Password...")),
 	choose_mods_(disp.video(), _("Modifications...")),
+	choose_campaign_(disp.video(), _("Campaign")),
 	era_combo_(disp, std::vector<std::string>()),
 	vision_combo_(disp, std::vector<std::string>()),
 	name_entry_(disp.video(), 32),
@@ -449,6 +453,59 @@ void create::process_event()
 		}
 	}
 
+	config campaign;
+	if(choose_campaign_.pressed()) {
+		// select a campaign
+		const config::const_child_itors &ci = game_config().child_range("campaign");
+		std::vector<config> campaigns(ci.first, ci.second);
+		if(campaigns.begin() == campaigns.end()) {
+			gui2::show_error_message(disp().video(), _("No campaigns are available.\n"));
+			return;
+		}
+		int campaign_num = -1;
+		gui2::tcampaign_selection dlg(campaigns);
+		try {
+			dlg.show(disp().video());
+		} catch(twml_exception& e) {
+			e.show(disp());
+			return;
+		}
+		if(dlg.get_retval() != gui2::twindow::OK) {
+			return;
+		}
+		campaign_num = dlg.get_choice();
+		campaign.append(campaigns[campaign_num]);
+
+		// select difficulty level
+		const std::string difficulty_descriptions = campaign["difficulty_descriptions"];
+		std::vector<std::string> difficulty_options = utils::split(difficulty_descriptions, ';');
+		const std::vector<std::string> difficulties = utils::split(campaign["difficulties"]);
+
+		std::string dif_def;
+		if(difficulties.empty() == false) {
+			int difficulty = 0;
+			if(difficulty_options.size() != difficulties.size()) {
+				difficulty_options.resize(difficulties.size());
+				std::copy(difficulties.begin(),difficulties.end(),difficulty_options.begin());
+			}
+
+			gui2::tcampaign_difficulty dlg(difficulty_options);
+			dlg.show(disp().video());
+
+			if(dlg.selected_index() == -1) {
+				return;
+			}
+			difficulty = dlg.selected_index();
+			dif_def = difficulties[difficulty];
+		}
+
+		// reload configs
+		game_config::scoped_preproc_define difficulty_define(dif_def);
+		game_config::scoped_preproc_define campaign_define(campaign["define"].str());
+		game_config::scoped_preproc_define multiplayer("MULTIPLAYER");
+		mp::gcontr->load_game_cfg();
+	}
+
 	// Turns per game
 	const int cur_turns = turns_slider_.value();
 
@@ -530,7 +587,7 @@ void create::process_event()
 		synchronize_selections();
 	}
 
-	bool map_changed = map_selection_ != maps_menu_.selection();
+	bool map_changed = (map_selection_ != maps_menu_.selection()) || !campaign.empty();
 	map_selection_ = maps_menu_.selection();
 
 	if (map_changed) {
@@ -567,7 +624,14 @@ void create::process_event()
 
 			if (levels.first != levels.second)
 			{
-				const config &level = *levels.first;
+				config level;
+				if(!campaign.empty()) { // should be in different place
+					std::string first_scenario = campaign["first_scenario"];
+					level.append(game_config().find_child("scenario", "id", first_scenario));
+				}
+				else {
+					level.append(*levels.first);
+				}
 				parameters_.scenario_data = level;
 				std::string map_data = level["map_data"];
 
@@ -774,6 +838,7 @@ void create::hide_children(bool hide)
 
 	era_combo_.hide(hide);
 	choose_mods_.hide(hide);
+	choose_campaign_.hide(hide);
 	password_button_.hide(hide);
 	vision_combo_.hide(hide);
 	name_entry_.hide(hide);
@@ -857,6 +922,9 @@ void create::layout_children(const SDL_Rect& rect)
 	ypos += era_combo_.height() + border_size;
 	choose_mods_.set_location(xpos, ypos);
 	ypos += choose_mods_.height() + border_size;
+	ypos += 20;
+	choose_campaign_.set_location(xpos, ypos);
+	ypos += choose_campaign_.height() + border_size;
 	if(!local_players_only_) {
 		password_button_.set_location(xpos, ypos);
 		ypos += password_button_.height() + border_size;

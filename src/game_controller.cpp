@@ -798,7 +798,7 @@ bool game_controller::play_multiplayer()
 
 			const mp::controller cntr = mp::CNTR_LOCAL;
 
-			mp::start_local_game(disp(), game_config(), cntr);
+			mp::start_local_game(cntr, this);
 
 		} else if((res >= 0 && res <= 2) || res == 4) {
 			std::string host;
@@ -810,7 +810,7 @@ bool game_controller::play_multiplayer()
 				host = multiplayer_server_;
 				multiplayer_server_ = "";
 			}
-			mp::start_client(disp(), game_config(), host);
+			mp::start_client(host, this);
 		}
 
 	} catch(game::mp_server_error& e) {
@@ -901,7 +901,7 @@ void game_controller::show_preferences()
 
 void game_controller::set_unit_data()
 {
-	loadscreen::start_stage("load unit types");
+	//loadscreen::start_stage("load unit types");
 	if (config &units = game_config_.child("units")) {
 		unit_types.set_config(units);
 	}
@@ -919,7 +919,7 @@ void game_controller::load_game_cfg(const bool force)
 			&& old_defines_map_ == cache_.get_preproc_map())
 		return; // game_config already holds requested config in memory
 	old_defines_map_ = cache_.get_preproc_map();
-	loadscreen::global_loadscreen_manager loadscreen_manager(disp().video());
+	//loadscreen::global_loadscreen_manager loadscreen_manager(disp().video());
 	cursor::setter cur(cursor::WAIT);
 	// The loadscreen will erase the titlescreen
 	// NOTE: even without loadscreen, needed after MP lobby
@@ -930,9 +930,9 @@ void game_controller::load_game_cfg(const bool force)
 		 * Then handle terrains so that they are last loaded from data/
 		 * 2nd everything in userdata
 		 **/
-		loadscreen::start_stage("verify cache");
+		//loadscreen::start_stage("verify cache");
 		data_tree_checksum();
-		loadscreen::start_stage("create cache");
+		//loadscreen::start_stage("create cache");
 
 		// start transaction so macros are shared
 		game_config::config_cache_transaction main_transaction;

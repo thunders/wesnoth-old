@@ -499,8 +499,24 @@ theme::status_item::status_item(const config& cfg) :
 theme::panel::panel(const config& cfg) : object(cfg), image_(cfg["image"])
 {}
 
+theme::slider::slider() :
+		object(),
+		title_(),
+		tooltip_(),
+		image_(),
+		overlay_(),
+		black_line_(false)
+{}
+theme::slider::slider(const config &cfg):
+	object(cfg),
+	title_(cfg["title"].str() + cfg["title_literal"].str()),
+	tooltip_(cfg["tooltip"]), image_(cfg["image"]), overlay_(cfg["overlay"]),
+	black_line_(cfg["black_line"].to_bool(false))
+{}
+
 theme::menu::menu() :
 	object(),
+	button_(true),
 	context_(false),
 	title_(),
 	tooltip_(),
@@ -510,7 +526,9 @@ theme::menu::menu() :
 {}
 
 theme::menu::menu(const config &cfg):
-	object(cfg), context_(cfg["is_context_menu"].to_bool()),
+	object(cfg),
+	button_(cfg["button"].to_bool(true)),
+	context_(cfg["is_context_menu"].to_bool(false)),
 	title_(cfg["title"].str() + cfg["title_literal"].str()),
 	tooltip_(cfg["tooltip"]), image_(cfg["image"]), overlay_(cfg["overlay"]),
 	items_(utils::split(cfg["items"]))
@@ -537,15 +555,29 @@ theme::action::action() :
 
 theme::action::action(const config &cfg):
 	object(cfg), context_(cfg["is_context_menu"].to_bool()),
+	auto_tooltip_(cfg["auto_tooltip"].to_bool(false)),
+	tooltip_name_prepend_(cfg["tooltip_name_prepend"].to_bool(false)),
 	title_(cfg["title"].str() + cfg["title_literal"].str()),
 	tooltip_(cfg["tooltip"]), image_(cfg["image"]), overlay_(cfg["overlay"]), type_(cfg["type"]),
 	items_(utils::split(cfg["items"]))
-{
-	if (cfg["auto_tooltip"].to_bool() && tooltip_.empty() && items_.size() == 1) {
-		tooltip_ = hotkey::get_description(items_[0]) + "  hotkeys: " + hotkey::get_names(items_[0]) +  "\n" + hotkey::get_tooltip(items_[0]);
-	} else if (cfg["tooltip_name_prepend"].to_bool() && items_.size() == 1) {
-		tooltip_ = hotkey::get_description(items_[0]) + "  hotkeys: " + hotkey::get_names(items_[0]) + "\n" + tooltip_;
+{}
+
+const std::string theme::action::tooltip(size_t index) const {
+
+	std::stringstream result;
+	if (auto_tooltip_ && tooltip_.empty() && items_.size() > index) {
+		result << hotkey::get_description(items_[index]);
+		if (!hotkey::get_names(items_[index]).empty())
+			result << "\n" << N_("Hotkey(s): ") << hotkey::get_names(items_[index]);
+		result << "\n" << hotkey::get_tooltip(items_[index]);
+	} else if (tooltip_name_prepend_ && items_.size() == 1) {
+		result << hotkey::get_description(items_[index]);
+		if (!hotkey::get_names(items_[index]).empty())
+			result << "\n" << N_("Hotkey(s): ") << hotkey::get_names(items_[index]);
+	    result << "\n" << tooltip_;
 	}
+
+	return result.str();
 }
 
 theme::theme(const config& cfg, const SDL_Rect& screen) :
@@ -602,11 +634,18 @@ bool theme::set_resolution(const SDL_Rect& screen)
 		return false;
 	}
 
-	std::map<std::string,std::string> title_stash;
+	std::map<std::string,std::string> title_stash_menus;
 	std::vector<theme::menu>::iterator m;
 	for (m = menus_.begin(); m != menus_.end(); ++m) {
 		if (!m->title().empty() && !m->get_id().empty())
-			title_stash[m->get_id()] = m->title();
+			title_stash_menus[m->get_id()] = m->title();
+	}
+
+	std::map<std::string,std::string> title_stash_actions;
+	std::vector<theme::action>::iterator a;
+	for (a = actions_.begin(); a != actions_.end(); ++a) {
+		if (!a->title().empty() && !a->get_id().empty())
+			title_stash_actions[a->get_id()] = a->title();
 	}
 
 	panels_.clear();
@@ -614,12 +653,18 @@ bool theme::set_resolution(const SDL_Rect& screen)
 	status_.clear();
 	menus_.clear();
 	actions_.clear();
+	sliders_.clear();
 
 	add_object(*current);
 
 	for (m = menus_.begin(); m != menus_.end(); ++m) {
-		if (title_stash.find(m->get_id()) != title_stash.end())
-			m->set_title(title_stash[m->get_id()]);
+		if (title_stash_menus.find(m->get_id()) != title_stash_menus.end())
+			m->set_title(title_stash_menus[m->get_id()]);
+	}
+
+	for (a = actions_.begin(); a != actions_.end(); ++a) {
+		if (title_stash_actions.find(a->get_id()) != title_stash_actions.end())
+			a->set_title(title_stash_actions[a->get_id()]);
 	}
 
 	theme_reset_event_.notify_observers();
@@ -693,6 +738,16 @@ void theme::add_object(const config& cfg)
 			DBG_DP << "done adding action...\n";
 	}
 
+	BOOST_FOREACH(const config &s, cfg.child_range("slider"))
+	{
+			slider new_slider(s);
+			DBG_DP << "adding slider\n";
+			set_object_location(new_slider, s["rect"], s["ref"]);
+			sliders_.push_back(new_slider);
+
+			DBG_DP << "done adding slider...\n";
+	}
+
 	if (const config &c = cfg.child("main_map_border")) {
 		border_ = tborder(c);
 	} else {
@@ -722,6 +777,12 @@ void theme::remove_object(std::string id){
 	for(std::vector<theme::action>::iterator a = actions_.begin(); a != actions_.end(); ++a) {
 		if (a->get_id() == id){
 			actions_.erase(a);
+			return;
+		}
+	}
+	for(std::vector<theme::slider>::iterator s = sliders_.begin(); s != sliders_.end(); ++s) {
+		if (s->get_id() == id){
+			sliders_.erase(s);
 			return;
 		}
 	}
@@ -850,21 +911,36 @@ const theme::menu *theme::get_menu_item(const std::string &key) const
 	return NULL;
 }
 
+const theme::action *theme::get_action_item(const std::string &key) const
+{
+	BOOST_FOREACH(const theme::action &a, actions_) {
+		if (a.get_id() == key) return &a;
+	}
+	return NULL;
+}
 
-theme::menu* theme::refresh_title(const std::string& id, const std::string& new_title){
-	theme::menu* res = NULL;
+theme::object* theme::refresh_title(const std::string& id, const std::string& new_title){
+
+	theme::object* res = NULL;
+
+	for (std::vector<theme::action>::iterator a = actions_.begin(); a != actions_.end(); ++a){
+		if (a->get_id() == id) {
+			res = &(*a);
+			a->set_title(new_title);
+		}
+	}
 
 	for (std::vector<theme::menu>::iterator m = menus_.begin(); m != menus_.end(); ++m){
 		if (m->get_id() == id) {
 			res = &(*m);
-			res->set_title(new_title);
+			m->set_title(new_title);
 		}
 	}
 
 	return res;
 }
 
-theme::menu* theme::refresh_title2(const std::string& id, const std::string& title_tag){
+theme::object* theme::refresh_title2(const std::string& id, const std::string& title_tag){
 	std::string new_title;
 
 	const config &cfg = find_ref(id, cfg_, false);

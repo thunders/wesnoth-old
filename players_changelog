@@ -1,8 +1,25 @@
 This is meant to be a concise list of player-visible changes (very minor
 changes may be omitted). For a complete list of changes, see the main
-changelog: https://sourceforge.net/p/wesnoth/code/ci/master/tree/changelog
+changelog: https://github.com/wesnoth/wesnoth-old/blob/master/changelog
 
-Version 1.11.2+dev:
+Version 1.11.4+dev:
+ * Campaigns:
+   * Legend of Wesmere:
+     * Scenario 05: Elvish Horse Archers can now carry the treasure
+     * Scenario 09: the player's loyal units stay in the recall list, instead of
+       being stored and then unstored in scenario 14
+ * Language and i18n:
+   * Updated translations:
+
+
+Version 1.11.4:
+ * AI:
+   * Reverted new Lua AI persistent storage mechanism for external CAs that
+     would crash Wesnoth under certain circumstances in 1.11.3. This will be
+     re-committed in an upcoming release.
+
+
+Version 1.11.3:
  * Campaigns:
    * Descend into Darkness:
      * Fix the surviving orc leader starting poisoned after scenario 5.
@@ -17,6 +34,7 @@ Version 1.11.2+dev:
      in difficulty of a loading game won't take effect (bug #20381).
    * Dialog (wml_message) is shifted by the
      distance between the left edge of the screen and the game map (bug #20592).
+   * Overhaul of the editor's gui
 
  * WML engine:
    * fix negative gold carried over (bug #20676)

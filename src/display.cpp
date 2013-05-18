@@ -110,6 +110,7 @@ display::display(unit_map* units, CVideo& video, const gamemap* map, const std::
 	reports_(),
 	menu_buttons_(),
 	action_buttons_(),
+	sliders_(),
 	invalidated_(),
 	previous_invalidated_(),
 	mouseover_hex_overlay_(NULL),
@@ -798,14 +799,58 @@ gui::button* display::find_menu_button(const std::string& id)
 	return NULL;
 }
 
+gui::slider* display::find_slider(const std::string& id)
+{
+	for (size_t i = 0; i < sliders_.size(); ++i) {
+		if(sliders_[i].id() == id) {
+			return &sliders_[i];
+		}
+	}
+	return NULL;
+}
+
 void display::create_buttons()
 {
 	std::vector<gui::button> menu_work;
 	std::vector<gui::button> action_work;
+	std::vector<gui::slider> slider_work;
+
+	DBG_DP << "creating sliders...\n";
+	const std::vector<theme::slider>& sliders = theme_.sliders();
+	for(std::vector<theme::slider>::const_iterator i = sliders.begin(); i != sliders.end(); ++i) {
+		gui::slider s(screen_, i->image(), i->black_line());
+		DBG_DP << "drawing button " << i->get_id() << "\n";
+		s.set_id(i->get_id());
+		const SDL_Rect& loc = i->location(screen_area());
+		s.set_location(loc);
+		//TODO support for non zoom sliders
+		s.set_max(MaxZoom);
+		s.set_min(MinZoom);
+		s.set_value(zoom_);
+		if (!i->tooltip().empty()){
+			s.set_tooltip_string(i->tooltip());
+		}
+		if(rects_overlap(s.location(),map_outside_area())) {
+			s.set_volatile(true);
+		}
+
+		gui::slider* s_prev = find_slider(s.id());
+		if(s_prev) {
+			s.set_max(s_prev->max_value());
+			s.set_min(s_prev->min_value());
+			s.set_value(s_prev->value());
+			s.enable(s_prev->enabled());
+		}
+
+		slider_work.push_back(s);
+	}
 
 	DBG_DP << "creating menu buttons...\n";
 	const std::vector<theme::menu>& buttons = theme_.menus();
 	for(std::vector<theme::menu>::const_iterator i = buttons.begin(); i != buttons.end(); ++i) {
+
+		if (!i->is_button()) continue;
+
 		gui::button b(screen_, i->title(), gui::button::TYPE_TURBO, i->image(),
 				gui::button::DEFAULT_SPACE, true, i->overlay());
 		DBG_DP << "drawing button " << i->get_id() << "\n";
@@ -834,8 +879,8 @@ void display::create_buttons()
 		b.set_id(i->get_id());
 		const SDL_Rect& loc = i->location(screen_area());
 		b.set_location(loc.x,loc.y);
-		if (!i->tooltip().empty()){
-			b.set_tooltip_string(i->tooltip());
+		if (!i->tooltip(0).empty()){
+			b.set_tooltip_string(i->tooltip(0));
 		}
 		if(rects_overlap(b.location(),map_outside_area())) {
 			b.set_volatile(true);
@@ -849,6 +894,7 @@ void display::create_buttons()
 
 	menu_buttons_.swap(menu_work);
 	action_buttons_.swap(action_work);
+	sliders_.swap(slider_work);
 	DBG_DP << "buttons created\n";
 }
 
@@ -1275,26 +1321,6 @@ static void draw_panel(CVideo& video, const theme::panel& panel, std::vector<gui
 		video.blit_surface(loc.x,loc.y,surf);
 		update_rect(loc);
 	}
-
-	//TODO this code seems to be no longer necessary, remove if this holds.
-//	static bool first_time = true;
-//	for(std::vector<gui::button>::iterator b = buttons.begin(); b != buttons.end(); ++b) {
-//		if(rects_overlap(b->location(),loc)) {
-//			b->set_dirty(true);
-//			if (first_time){
-//				/**
-//				 * @todo FixMe YogiHH:
-//				 * This is only made to have the buttons store their background
-//				 * information, otherwise the background will appear completely
-//				 * black. It would more straightforward to call bg_update, but
-//				 * that is not public and there seems to be no other way atm to
-//				 * call it. I will check if bg_update can be made public.
-//				 */
-//				b->hide(true);
-//				b->hide(false);
-//			}
-//		}
-//	}
 }
 
 static void draw_label(CVideo& video, surface target, const theme::label& label)
@@ -1606,7 +1632,7 @@ const theme::menu* display::menu_pressed()
 				assert(false);
 				return NULL;
 			}
-			return &theme_.menus()[index];
+			return theme_.get_menu_item(i->id());
 		}
 	}
 
@@ -1881,9 +1907,11 @@ bool display::zoom_at_min() const
 	return zoom_ == MinZoom;
 }
 
-void display::set_zoom(int amount)
+void display::set_zoom(int amount, bool absolute)
 {
 	int new_zoom = zoom_ + amount;
+	if (absolute)
+		new_zoom = amount;
 	if (new_zoom < MinZoom) {
 		new_zoom = MinZoom;
 	}
@@ -1891,9 +1919,13 @@ void display::set_zoom(int amount)
 		new_zoom = MaxZoom;
 	}
 	if (new_zoom != zoom_) {
+		gui::slider* zoom_slider = find_slider("map-zoom-slider");
+		if (zoom_slider) {
+			zoom_slider->set_value(new_zoom);
+		}
 		SDL_Rect const &area = map_area();
-		xpos_ += (xpos_ + area.w / 2) * amount / zoom_;
-		ypos_ += (ypos_ + area.h / 2) * amount / zoom_;
+		xpos_ += (xpos_ + area.w / 2) * (absolute ? new_zoom - zoom_ : amount) / zoom_;
+		ypos_ += (ypos_ + area.h / 2) * (absolute ? new_zoom - zoom_ : amount) / zoom_;
 
 		zoom_ = new_zoom;
 		bounds_check_position();
@@ -2253,7 +2285,7 @@ void display::redraw_everything()
 
 	theme_.set_resolution(screen_area());
 
-	if(menu_buttons_.empty() == false) {
+	if(!menu_buttons_.empty() || !action_buttons_.empty() || !sliders_.empty() ) {
 		create_buttons();
 	}
 

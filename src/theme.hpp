@@ -175,7 +175,7 @@ public:
 
 		const std::string& title() const { return title_; }
 
-		const std::string& tooltip() const { return tooltip_; }
+		const std::string tooltip(size_t index) const;
 
 		const std::string& type() const { return type_; }
 
@@ -187,9 +187,33 @@ public:
 
 		void set_title(const std::string& new_title) { title_ = new_title; }
 	private:
-		bool context_;
+		bool context_, auto_tooltip_, tooltip_name_prepend_;
 		std::string title_, tooltip_, image_, overlay_,  type_;
 		std::vector<std::string> items_;
+	};
+
+	class slider : public object
+	{
+	public:
+		slider();
+		explicit slider(const config& cfg);
+
+		using object::location;
+
+		const std::string& title() const { return title_; }
+
+		const std::string& tooltip() const { return tooltip_; }
+
+		const std::string& image() const { return image_; }
+
+		const std::string& overlay() const { return overlay_; }
+
+		bool black_line() const { return black_line_; }
+
+		void set_title(const std::string& new_title) { title_ = new_title; }
+	private:
+		std::string title_, tooltip_, image_, overlay_;
+		bool black_line_;
 	};
 
 	class menu : public object
@@ -199,6 +223,8 @@ public:
 		explicit menu(const config& cfg);
 
 		using object::location;
+
+		bool is_button() const { return button_; }
 
 		bool is_context() const  { return context_; }
 
@@ -214,6 +240,7 @@ public:
 
 		void set_title(const std::string& new_title) { title_ = new_title; }
 	private:
+		bool button_;
 		bool context_;
 		std::string title_, tooltip_, image_, overlay_;
 		std::vector<std::string> items_;
@@ -226,6 +253,7 @@ public:
 	const std::vector<panel>& panels() const { return panels_; }
 	const std::vector<label>& labels() const { return labels_; }
 	const std::vector<menu>& menus() const { return menus_; }
+	const std::vector<slider>& sliders() const { return sliders_; }
 	const std::vector<action>& actions() const { return actions_; }
 
 	const menu* context_menu() const
@@ -233,12 +261,13 @@ public:
 
 	//refresh_title2 changes the title of a menu entry, identified by id.
 	//If no menu entry is found, an empty menu object is returned.
-	menu* refresh_title(const std::string& id, const std::string& new_title);
-	menu* refresh_title2(const std::string& id, const std::string& title_tag);
+	object* refresh_title(const std::string& id, const std::string& new_title);
+	object* refresh_title2(const std::string& id, const std::string& title_tag);
 	void modify_label(const std::string& id, const std::string& text);
 
 	const status_item* get_status_item(const std::string& item) const;
 	const menu *get_menu_item(const std::string &key) const;
+	const action* get_action_item(const std::string &key) const;
 
 	const SDL_Rect& main_map_location(const SDL_Rect& screen) const
 		{ return main_map_.location(screen); }
@@ -273,6 +302,7 @@ private:
 	std::vector<label> labels_;
 	std::vector<menu> menus_;
 	std::vector<action> actions_;
+	std::vector<slider> sliders_;
 
 	menu context_;
 	action action_context_;

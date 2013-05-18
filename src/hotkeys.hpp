@@ -55,6 +55,7 @@ enum HOTKEY_COMMAND {
 	HOTKEY_FULLSCREEN, HOTKEY_SCREENSHOT, HOTKEY_MAP_SCREENSHOT, HOTKEY_ACCELERATED,
 	HOTKEY_UNIT_DESCRIPTION, HOTKEY_RENAME_UNIT, HOTKEY_DELETE_UNIT,
 	HOTKEY_EDITOR_UNIT_TOGGLE_CANRECRUIT, HOTKEY_EDITOR_UNIT_TOGGLE_RENAMEABLE,
+	HOTKEY_EDITOR_UNIT_CHANGE_ID, HOTKEY_EDITOR_UNIT_TOGGLE_LOYAL,
 	HOTKEY_SAVE_GAME, HOTKEY_SAVE_REPLAY, HOTKEY_SAVE_MAP, HOTKEY_LOAD_GAME,
 	HOTKEY_RECRUIT, HOTKEY_REPEAT_RECRUIT, HOTKEY_RECALL, HOTKEY_ENDTURN,
 	HOTKEY_TOGGLE_ELLIPSES, HOTKEY_TOGGLE_GRID, HOTKEY_STATUS_TABLE, HOTKEY_MUTE, HOTKEY_MOUSE_SCROLL,
@@ -93,6 +94,9 @@ enum HOTKEY_COMMAND {
 	HOTKEY_EDITOR_PALETTE_ITEM_SWAP,
 	HOTKEY_EDITOR_PALETTE_GROUPS, HOTKEY_EDITOR_PALETTE_UPSCROLL, HOTKEY_EDITOR_PALETTE_DOWNSCROLL,
 	HOTKEY_EDITOR_TOOL_NEXT,
+
+	HOTKEY_EDITOR_SWITCH_TIME,
+
 	HOTKEY_EDITOR_TOOL_PAINT, HOTKEY_EDITOR_TOOL_FILL,
 	HOTKEY_EDITOR_TOOL_SELECT, HOTKEY_EDITOR_TOOL_STARTING_POSITION, HOTKEY_EDITOR_TOOL_LABEL,
 	HOTKEY_EDITOR_TOOL_UNIT, HOTKEY_EDITOR_TOOL_VILLAGE, HOTKEY_EDITOR_TOOL_ITEM, HOTKEY_EDITOR_TOOL_SOUNDSOURCE,
@@ -392,11 +396,11 @@ public:
 	// Does the action control a toggle switch? If so, return the state of the action (on or off).
 	virtual ACTION_STATE get_action_state(hotkey::HOTKEY_COMMAND /*command*/, int /*index*/) const { return ACTION_STATELESS; }
 	// Returns the appropriate menu image. Checkable items will get a checked/unchecked image.
-	std::string get_menu_image(const std::string& command, int index=-1) const;
+	std::string get_menu_image(display& disp, const std::string& command, int index=-1) const;
 	// Returns a vector of images for a given menu.
 	std::vector<std::string> get_menu_images(display &, const std::vector<std::string>& items_arg);
 
-	void show_menu(const std::vector<std::string>& items_arg, int xloc, int yloc, bool context_menu, display& gui);
+	virtual void show_menu(const std::vector<std::string>& items_arg, int xloc, int yloc, bool context_menu, display& gui);
 	void execute_action(const std::vector<std::string>& items_arg, int xloc, int yloc, bool context_menu, display& gui);
 
 	/**

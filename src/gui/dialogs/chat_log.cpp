@@ -29,6 +29,7 @@
 #include "gui/widgets/slider.hpp"
 #include "utils/foreach.tpp"
 
+#include "../../game_preferences.hpp"
 #include "../../gamestatus.hpp"
 #include "../../log.hpp"
 #include "../../resources.hpp"
@@ -90,21 +91,12 @@ public:
 		msg_label->set_label("");
 	}
 
-	std::string replace(std::string str, const std::string &src, const std::string &dst)
-	{
-		std::string::size_type pos = 0;
-		while ( (pos = str.find(src, pos)) != std::string::npos ) {
-			str.replace( pos, src.size(), dst );
-			pos++;
-		}
-		return str;
-	}
 	std::string escape(const std::string &str)
 	{
 		// need pango escape here
-		std::string result = replace(str,"&","&amp;");
-		result = replace(result,"<","&lt;");
-		result = replace(result,">","&gt;");
+		std::string result = utils::replace(str, "&", "&amp;");
+		result = utils::replace(result, "<", "&lt;");
+		result = utils::replace(result, ">", "&gt;");
 		return result;
 	}
 
@@ -134,9 +126,9 @@ public:
 				std::string nick_prefix = "<span color=\""+color+"\">";
 				std::string nick_suffix ="</span> ";
 				if (me) {
-					str << nick_prefix << "&lt;" << escape(t.nick()) << escape(t.text().substr(3))<<"&gt;" <<nick_suffix << std::endl;
+					str << nick_prefix << "&lt;" << escape(preferences::get_chat_timestamp(t.time())) << escape(t.nick()) << escape(t.text().substr(3))<<"&gt;" <<nick_suffix << std::endl;
 				} else {
-					str << nick_prefix << "&lt;" << escape(t.nick()) << "&gt;"<< nick_suffix << escape(t.text()) << std::endl;
+					str << nick_prefix << "&lt;" << escape(preferences::get_chat_timestamp(t.time())) << escape(t.nick()) << "&gt;"<< nick_suffix << escape(t.text()) << std::endl;
 				}
 			}
 		}

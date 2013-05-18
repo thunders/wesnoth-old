@@ -27,7 +27,7 @@ namespace gui {
 class slider : public widget
 {
 public:
-	slider(CVideo &video);
+	slider(CVideo &video, const std::string& image = "buttons/sliders/slider", bool black = false);
 
 	void set_min(int value);
 	void set_max(int value);
@@ -36,6 +36,7 @@ public:
 
 	int value() const;
 	int max_value() const;
+	int min_value() const { return min_; }
 
 	bool value_change();
 
@@ -57,6 +58,7 @@ private:
 	void set_slider_position(int x);
 	SDL_Rect slider_area() const;
 	surface image_, pressedImage_, activeImage_, disabledImage_;
+	SDL_Color line_color_;
 
 	int min_;
 	int max_;

@@ -55,12 +55,14 @@ void editor_palette<Item>::expand_palette_groups_menu(std::vector<std::string>& 
 				if (groupname.empty()) {
 					groupname = _("(Unknown Group)");
 				}
-				std::string img = item_groups[mci].icon + "_30.png";
 				std::stringstream str;
-				//TODO
-				//std::string postfix = ".png"; //(toolkit_->active_group_index() == mci) ? "-pressed.png" : ".png";
-				//str << IMAGE_PREFIX << "buttons/" << img << postfix << COLUMN_SEPARATOR << groupname;
-				str << IMAGE_PREFIX << img << COLUMN_SEPARATOR << groupname;
+				str << IMAGE_PREFIX << item_groups[mci].icon;
+				if (mci == active_group_index()) {
+					str << "_30-pressed.png";
+				} else {
+					str << "_30.png";
+				}
+				str << COLUMN_SEPARATOR << groupname;
 				groups.push_back(str.str());
 			}
 			items.insert(items.begin() + i, groups.begin(), groups.end());
@@ -228,6 +230,8 @@ void editor_palette<Item>::adjust_size(const SDL_Rect& target)
 	buttons_.resize(nitems_, gui::tristate_button(gui_.video(), this));
 	set_location(target);
 	set_dirty(true);
+	gui_.video().clear_help_string(help_handle_);
+	help_handle_ = gui_.video().set_help_string(get_help_string());
 }
 template void editor_palette<t_translation::t_terrain>::adjust_size(const SDL_Rect& target);
 template void editor_palette<unit_type>::adjust_size(const SDL_Rect& target);
@@ -239,6 +243,8 @@ void editor_palette<Item>::select_fg_item(const std::string& item_id)
 		selected_fg_item_ = item_id;
 		set_dirty();
 	}
+	gui_.video().clear_help_string(help_handle_);
+	help_handle_ = gui_.video().set_help_string(get_help_string());
 }
 template void editor_palette<t_translation::t_terrain>::select_fg_item(const std::string& terrain_id);
 template void editor_palette<unit_type>::select_fg_item(const std::string& unit_id);
@@ -250,6 +256,8 @@ void editor_palette<Item>::select_bg_item(const std::string& item_id)
 		selected_bg_item_ = item_id;
 		set_dirty();
 	}
+	gui_.video().clear_help_string(help_handle_);
+	help_handle_ = gui_.video().set_help_string(get_help_string());
 }
 template void editor_palette<t_translation::t_terrain>::select_bg_item(const std::string& terrain_id);
 template void editor_palette<unit_type>::select_bg_item(const std::string& unit_id);
@@ -258,6 +266,9 @@ template<class Item>
 void editor_palette<Item>::swap()
 {
 	std::swap(selected_fg_item_, selected_bg_item_);
+	select_fg_item(selected_fg_item_);
+	select_bg_item(selected_bg_item_);
+	set_dirty();
 }
 template void editor_palette<t_translation::t_terrain>::swap();
 template void editor_palette<unit_type>::swap();
@@ -274,6 +285,9 @@ template size_t editor_palette<unit_type>::num_items();
 template<class Item>
 void editor_palette<Item>::draw_contents()
 {
+	if (*active_mouse_action_)
+		(*active_mouse_action_)->set_mouse_overlay(gui_);
+
 	gui::button* palette_menu_button = gui_.find_menu_button("menu-editor-terrain");
 	if (palette_menu_button) {
 

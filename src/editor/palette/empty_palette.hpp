@@ -45,17 +45,26 @@ public:
 
 	//drawing
 	virtual void adjust_size(const SDL_Rect& /*target*/) {};
-	virtual void draw() {
-		//TODO
-		/*
-		gui::button* upscroll_button = gui_.find_button("upscroll-button-editor");
-		upscroll_button->hide(true);
-		gui::button* downscroll_button = gui_.find_button("downscroll-button-editor");
-		downscroll_button->hide(true);
-		gui::button* palette_menu_button = gui_.find_button("menu-editor-terrain");
-		palette_menu_button->hide(true);
-		*/
-	};
+	virtual void draw() {};
+
+	void hide(bool hidden) {
+		if (!hidden) {
+			gui::button* upscroll_button = gui_.find_action_button("upscroll-button-editor");
+			upscroll_button->enable(false);
+			gui::button* downscroll_button = gui_.find_action_button("downscroll-button-editor");
+			downscroll_button->enable(false);
+			gui::button* palette_menu_button = gui_.find_menu_button("menu-editor-terrain");
+			palette_menu_button->set_overlay("");
+			palette_menu_button->enable(false);
+		} else {
+			gui::button* upscroll_button = gui_.find_action_button("upscroll-button-editor");
+			upscroll_button->enable(true);
+			gui::button* downscroll_button = gui_.find_action_button("downscroll-button-editor");
+			downscroll_button->enable(true);
+			gui::button* palette_menu_button = gui_.find_menu_button("menu-editor-terrain");
+			palette_menu_button->enable(true);
+		}
+	}
 
 	std::vector<gui::widget>* get_widgets() { return NULL; };
 
@@ -74,6 +83,7 @@ public:
 	virtual size_t num_items() {return 0;};
 	virtual size_t start_num() {return 0;};
 	virtual void set_start_item(size_t /*index*/) {};
+	virtual bool supports_swap() { return false; }
 	virtual void swap() {};
 
 private:

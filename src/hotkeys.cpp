@@ -105,7 +105,7 @@ const hotkey_command hotkey_list_[] = {
 	{ hotkey::HOTKEY_CHANGE_SIDE, "changeside", N_("Change Side (Debug!)"), false, hotkey::SCOPE_GAME, NULL },
 	{ hotkey::HOTKEY_PREFERENCES, "preferences", N_("Preferences"), false, hotkey::SCOPE_GENERAL, NULL },
 	{ hotkey::HOTKEY_OBJECTIVES, "objectives", N_("Scenario Objectives"), false, hotkey::SCOPE_GAME, NULL },
-	{ hotkey::HOTKEY_UNIT_LIST, "unitlist", N_("Unit List"), false, hotkey::SCOPE_GAME, NULL },
+	{ hotkey::HOTKEY_UNIT_LIST, "unitlist", N_("Unit List"), false, hotkey::SCOPE_GENERAL, NULL },
 	{ hotkey::HOTKEY_STATISTICS, "statistics", N_("Statistics"), false, hotkey::SCOPE_GAME, NULL },
 	{ hotkey::HOTKEY_STOP_NETWORK, "stopnetwork", N_("Pause Network Game"), false, hotkey::SCOPE_GAME, NULL },
 	{ hotkey::HOTKEY_START_NETWORK, "startnetwork", N_("Continue Network Game"), false, hotkey::SCOPE_GAME, NULL },
@@ -157,26 +157,30 @@ const hotkey_command hotkey_list_[] = {
 	{ hotkey::HOTKEY_EDITOR_MAP_INFO, "editor-map-info", N_("Map Information"), false, hotkey::SCOPE_EDITOR, NULL },
 	{ hotkey::HOTKEY_EDITOR_SIDE_NEW, "editor-side-new", N_("Add New Side"), false, hotkey::SCOPE_EDITOR, NULL },
 	{ hotkey::HOTKEY_EDITOR_SIDE_SWITCH, "editor-switch-side", N_("Switch Side"), false, hotkey::SCOPE_EDITOR, NULL },
-	{ hotkey::HOTKEY_EDITOR_PALETTE_ITEM_SWAP, "editor-terrain-palette-swap", N_("Swap Foreground/Background Terrains"), false, hotkey::SCOPE_EDITOR, NULL },
+	{ hotkey::HOTKEY_EDITOR_PALETTE_ITEM_SWAP, "editor-terrain-palette-swap", N_("Swap Foreground/Background Palette Item"), false, hotkey::SCOPE_EDITOR, NULL },
 	{ hotkey::HOTKEY_EDITOR_PALETTE_GROUPS, "editor-palette-groups", N_("Change Palette Group"), false, hotkey::SCOPE_EDITOR, NULL },
 	{ hotkey::HOTKEY_EDITOR_PALETTE_UPSCROLL, "editor-palette-upscroll", N_("Scroll Palette Left"), false, hotkey::SCOPE_EDITOR, NULL },
 	{ hotkey::HOTKEY_EDITOR_PALETTE_DOWNSCROLL, "editor-palette-downscroll", N_("Scroll Palette Right"), false, hotkey::SCOPE_EDITOR, NULL },
 
+	{ hotkey::HOTKEY_EDITOR_SWITCH_TIME, "editor-switch-time", N_("Switch Time of Day"), false, hotkey::SCOPE_EDITOR, NULL },
 
 	{ hotkey::HOTKEY_EDITOR_TOOL_NEXT, "editor-tool-next", N_("Next Tool"), false, hotkey::SCOPE_EDITOR, NULL },
 
 	{ hotkey::HOTKEY_EDITOR_TOOL_PAINT, "editor-tool-paint", N_("Paint Tool"), false, hotkey::SCOPE_EDITOR, N_("Use left/right mouse button to draw fore-/background terrain. Hold Shift to paint base layer only. Ctrl+click to sample terrain under cursor.") },
 	{ hotkey::HOTKEY_EDITOR_TOOL_FILL, "editor-tool-fill", N_("Fill Tool"), false, hotkey::SCOPE_EDITOR, N_("Use left/right mouse button to draw fore-/background terrain. Hold Shift to paint base layer only. Ctrl+click to sample terrain under cursor.") },
-	{ hotkey::HOTKEY_EDITOR_TOOL_SELECT, "editor-tool-select", N_("Selection Tool"), false, hotkey::SCOPE_EDITOR, N_("Left mouse button selects, right deselects. Hold Shift for magic-wand selection of tiles with same terrain.") },
+	{ hotkey::HOTKEY_EDITOR_TOOL_SELECT, "editor-tool-select", N_("Selection Tool"), false, hotkey::SCOPE_EDITOR, N_("Left mouse button selects or deselects, right brings up a context menu. Hold Shift for magic-wand selection of tiles with same terrain.") },
 	{ hotkey::HOTKEY_EDITOR_TOOL_STARTING_POSITION, "editor-tool-starting-position", N_("Starting Positions Tool"), false, hotkey::SCOPE_EDITOR,  N_("Left mouse button displays player selection, right clears. Number keys scroll to the starting position, alt+number sets respective starting position under cursor, delete clears.") },
 	{ hotkey::HOTKEY_EDITOR_TOOL_LABEL, "editor-tool-label", N_("Label Tool"), false, hotkey::SCOPE_EDITOR, N_("Left mouse button sets or drags a label, right clears.") },
-	{ hotkey::HOTKEY_EDITOR_TOOL_UNIT, "editor-tool-unit", N_("Unit Tool"), false, hotkey::SCOPE_EDITOR, N_("Left mouse button sets a new unit or moves a unit via drag and drop, right clears. Not implemented yet.") },
+	{ hotkey::HOTKEY_EDITOR_TOOL_UNIT, "editor-tool-unit", N_("Unit Tool"), false, hotkey::SCOPE_EDITOR, N_("Left mouse button sets a new unit or moves a unit via drag and drop, right brings up a context menu. Needs a defined Side.") },
 	{ hotkey::HOTKEY_EDITOR_TOOL_ITEM, "editor-tool-item", N_("Item Tool"), false, hotkey::SCOPE_EDITOR, N_("Left mouse button sets a new item or moves it via drag and drop, right clears. Not implemented yet.") },
 	{ hotkey::HOTKEY_EDITOR_TOOL_SOUNDSOURCE, "editor-tool-soundsource", N_("Soundsource Tool"), false, hotkey::SCOPE_EDITOR, N_("Left mouse button sets or drags a sound source, right clears. Not implemented yet.") },
-	{ hotkey::HOTKEY_EDITOR_TOOL_VILLAGE, "editor-tool-village", N_("Village Tool"), false, hotkey::SCOPE_EDITOR, N_("Left mouse button sets the village ownership to the current side, right clears. Not implemented yet.") },
+	{ hotkey::HOTKEY_EDITOR_TOOL_VILLAGE, "editor-tool-village", N_("Village Tool"), false, hotkey::SCOPE_EDITOR, N_("Left mouse button sets the village ownership to the current side, right clears. Needs a defined Side.") },
 
 	{ hotkey::HOTKEY_EDITOR_UNIT_TOGGLE_CANRECRUIT, "editor-toggle-canrecruit", N_("Canrecruit"), false, hotkey::SCOPE_EDITOR, N_("Toggle the recruit attribute of a unit.") },
 	{ hotkey::HOTKEY_EDITOR_UNIT_TOGGLE_RENAMEABLE, "editor-toggle-renameable", N_("Can be renamed"), false, hotkey::SCOPE_EDITOR, N_("Toggle the unit being renameable.") },
+
+	{ hotkey::HOTKEY_EDITOR_UNIT_CHANGE_ID, "editor-change-unitid", N_("Change Unit ID"), false, hotkey::SCOPE_EDITOR, NULL },
+	{ hotkey::HOTKEY_EDITOR_UNIT_TOGGLE_LOYAL, "editor-unit-toggle-loyal", N_("Loyal"), false, hotkey::SCOPE_EDITOR, NULL },
 
 
 	{ hotkey::HOTKEY_EDITOR_BRUSH_NEXT, "editor-brush-next", N_("Next Brush"), false, hotkey::SCOPE_EDITOR, NULL },
@@ -1247,19 +1251,20 @@ void command_executor::set_button_state(display& disp) {
 
 		gui::button* button = disp.find_action_button(action.get_id());
 		bool enabled = false;
+		int i = 0;
 		BOOST_FOREACH(const std::string& command, action.items()) {
 
 			hotkey::HOTKEY_COMMAND command_id = hotkey::get_id(command);
-			std::string tooltip = action.tooltip();
-			if (file_exists("images/icons/action/" + command + "_30.png" ))
+			std::string tooltip = action.tooltip(i);
+			if (file_exists(game_config::path + "/images/icons/action/" + command + "_30.png" ))
 				button->set_overlay("icons/action/" + command);
 			if (!tooltip.empty())
 				button->set_tooltip_string(tooltip);
 
 			bool can_execute = can_execute_command(command_id);
+			i++;
 			if (!can_execute) continue;
 			enabled = true;
-
 
 			ACTION_STATE state = get_action_state(command_id, -1);
 			switch (state) {
@@ -1286,33 +1291,24 @@ void command_executor::set_button_state(display& disp) {
 void command_executor::show_menu(const std::vector<std::string>& items_arg, int xloc, int yloc, bool /*context_menu*/, display& gui)
 {
 	std::vector<std::string> items = items_arg;
-	if (items.empty()) {
-		return;
-	}
-	//TODO this does not make sense anymore
-	if (can_execute_command(hotkey::get_id(items.front()), 0)) {
-		// If just one item is passed in, that means we should execute that item.
-		/*
-		if (!context_menu && items.size() == 1 && items_arg.size() == 1) {
-			hotkey::execute_command(gui,hotkey::get_id(items.front()), this);
-			set_button_state(gui);
-			return;
-		}
-		*/
+	if (items.empty()) return;
 
-		std::vector<std::string> menu = get_menu_images(gui, items);
+	std::vector<std::string> menu = get_menu_images(gui, items);
+	int res = 0;
+	{
+		gui::dialog mmenu = gui::dialog(gui,"","",
+				gui::MESSAGE, gui::dialog::hotkeys_style);
+		mmenu.set_menu(menu);
+		res = mmenu.show(xloc, yloc);
+	} // This will kill the dialog.
+	if (res < 0 || size_t(res) >= items.size()) return;
 
-		int res = 0;
-		{
-			gui::dialog mmenu = gui::dialog(gui,"","",
-			gui::MESSAGE, gui::dialog::hotkeys_style);
-			mmenu.set_menu(menu);
-			res = mmenu.show(xloc, yloc);
-		} // This will kill the dialog.
-		if (res < 0 || size_t(res) >= items.size()) {
-			return;
-		}
-
+	const theme::menu* submenu = gui.get_theme().get_menu_item(items[res]);
+	if (submenu) {
+		int y,x;
+		SDL_GetMouseState(&x,&y);
+		this->show_menu(submenu->items(), x, y, submenu->is_context(), gui);
+	} else {
 		const hotkey::HOTKEY_COMMAND cmd = hotkey::get_id(items[res]);
 		hotkey::execute_command(gui,cmd,this,res);
 		set_button_state(gui);
@@ -1338,7 +1334,7 @@ void command_executor::execute_action(const std::vector<std::string>& items_arg,
 	}
 }
 
-std::string command_executor::get_menu_image(const std::string& command, int index) const {
+std::string command_executor::get_menu_image(display& disp, const std::string& command, int index) const {
 
 	const std::string base_image_name = "icons/action/" + command + "_25.png";
 	const std::string pressed_image_name = "icons/action/" + command + "_25-pressed.png";
@@ -1346,7 +1342,12 @@ std::string command_executor::get_menu_image(const std::string& command, int ind
 	const hotkey::HOTKEY_COMMAND hk = hotkey::get_id(command);
 	const hotkey::ACTION_STATE state = get_action_state(hk, index);
 
-	if (file_exists("images/" + base_image_name)) {
+	const theme::menu* menu = disp.get_theme().get_menu_item(command);
+	if (menu)
+		return "buttons/fold-arrow.png";
+	//if (hk == hotkey::HOTKEY_NULL)
+
+	if (file_exists(game_config::path + "/images/" + base_image_name)) {
 		switch (state) {
 			case ACTION_ON:
 			case ACTION_SELECTED:
@@ -1379,18 +1380,22 @@ std::vector<std::string> command_executor::get_menu_images(display& disp, const 
 
 		std::stringstream str;
 		//see if this menu item has an associated image
-		std::string img(get_menu_image(item, i));
+		std::string img(get_menu_image(disp, item, i));
 		if (img.empty() == false) {
 			has_image = true;
 			str << IMAGE_PREFIX << img << COLUMN_SEPARATOR;
 		}
 
 		if (hk == hotkey::HOTKEY_NULL) {
-			str << item.substr(0, item.find_last_not_of(' ') + 1) << COLUMN_SEPARATOR;
+			const theme::menu* menu = disp.get_theme().get_menu_item(item);
+			if (menu)
+				str << menu->title();
+			else
+				str << item.substr(0, item.find_last_not_of(' ') + 1) << COLUMN_SEPARATOR;
 		} else {
 			std::string desc = hotkey::get_description(item);
 			if (hk == HOTKEY_ENDTURN) {
-				const theme::menu *b = disp.get_theme().get_menu_item("button-endturn");
+				const theme::action *b = disp.get_theme().get_action_item("button-endturn");
 				if (b) {
 					desc = b->title();
 				}

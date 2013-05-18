@@ -61,7 +61,9 @@ enum menu_type {
 	MAP,
 	PALETTE,
 	AREA,
-	SIDE
+	SIDE,
+	TIME,
+	SCHEDULE
 };
 
 /**
@@ -111,6 +113,11 @@ class editor_controller : public controller_base,
 		/** command_executor override */
 		bool execute_command(hotkey::HOTKEY_COMMAND command, int index = -1);
 
+		/** command_executor override */
+		void show_menu(const std::vector<std::string>& items_arg, int xloc, int yloc, bool context_menu, display& /*gui*/) {
+			show_menu(items_arg, xloc, yloc, context_menu);
+		}
+
 		/** controller_base override */
 		void show_menu(const std::vector<std::string>& items_arg, int xloc, int yloc, bool context_menu);
 
@@ -124,7 +131,10 @@ class editor_controller : public controller_base,
 		void toggle_grid();
 
 		void unit_description();
+		void change_unit_id();
 		void rename_unit();
+
+		void unit_list();
 
 		/** Copy the selection on the current map to the clipboard */
 		void copy_selection();
@@ -223,7 +233,8 @@ class editor_controller : public controller_base,
 		boost::scoped_ptr<editor_display> gui_;
 
 		/** Pre-defined time of day lighting settings for the settings dialog */
-		std::vector<time_of_day> tods_;
+		typedef std::map<std::string, std::pair<std::string ,std::vector<time_of_day> > > tods_map;
+		tods_map tods_;
 
 		/* managers */
 	public:

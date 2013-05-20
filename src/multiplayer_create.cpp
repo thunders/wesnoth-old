@@ -453,8 +453,13 @@ void create::process_event()
 		}
 	}
 
-	config campaign;
+	bool map_changed = map_selection_ != maps_menu_.selection();
+	std::string first_campaign_scenario;
+
 	if(choose_campaign_.pressed()) {
+		map_changed = true;
+		campaign_type = "scenario";
+
 		// select a campaign
 		const config::const_child_itors &ci = game_config().child_range("campaign");
 		std::vector<config> campaigns(ci.first, ci.second);
@@ -474,7 +479,9 @@ void create::process_event()
 			return;
 		}
 		campaign_num = dlg.get_choice();
-		campaign.append(campaigns[campaign_num]);
+
+		const config &campaign = campaigns[campaign_num];
+		first_campaign_scenario = campaign["first_scenario"].str();
 
 		// select difficulty level
 		const std::string difficulty_descriptions = campaign["difficulty_descriptions"];
@@ -587,7 +594,6 @@ void create::process_event()
 		synchronize_selections();
 	}
 
-	bool map_changed = (map_selection_ != maps_menu_.selection()) || !campaign.empty();
 	map_selection_ = maps_menu_.selection();
 
 	if (map_changed) {
@@ -624,14 +630,7 @@ void create::process_event()
 
 			if (levels.first != levels.second)
 			{
-				config level;
-				if(!campaign.empty()) { // should be in different place
-					std::string first_scenario = campaign["first_scenario"];
-					level.append(game_config().find_child("scenario", "id", first_scenario));
-				}
-				else {
-					level.append(*levels.first);
-				}
+				const config &level = (!first_campaign_scenario.empty()) ? game_config().find_child("scenario", "id", first_campaign_scenario) : *levels.first;
 				parameters_.scenario_data = level;
 				std::string map_data = level["map_data"];
 

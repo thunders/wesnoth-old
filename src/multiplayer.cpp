@@ -687,6 +687,7 @@ static void enter_lobby_mode(game_display& disp, const config& game_config, mp::
 namespace mp {
 
 game_controller* gcontr = NULL;
+std::string campaign_type = "multiplayer";
 
 void start_local_game(mp::controller default_controller, game_controller* gcontroller)
 {

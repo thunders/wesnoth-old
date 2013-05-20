@@ -28,6 +28,7 @@ namespace mp {
 const size_t max_login_size = 20;
 
 extern game_controller* gcontr;
+extern std::string campaign_type;
 
 /*
  * This is the main entry points of multiplayer mode.

@@ -129,8 +129,8 @@ void level_to_gamestate(config& level, game_state& state)
 	//all needed information here already)
 	state.replay_start() = level.child("replay_start");
 
-	level["campaign_type"] = "multiplayer";
-	state.classification().campaign_type = "multiplayer";
+	level["campaign_type"] = campaign_type;
+	state.classification().campaign_type = campaign_type;
 	state.classification().completion = level["completion"].str();
 	state.classification().version = level["version"].str();
 

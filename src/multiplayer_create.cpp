@@ -60,6 +60,7 @@ create::create(game_display& disp, const config &cfg, chat& c, config& gamelist,
 	ui(disp, _("Create Game"), cfg, c, gamelist, preferences::resolution().second < 768),
 
 	local_players_only_(local_players_only),
+	campaigns_menu_(true),
 	tooltip_manager_(disp.video()),
 	era_selection_(-1),
 	map_selection_(-1),
@@ -106,7 +107,7 @@ create::create(game_display& disp, const config &cfg, chat& c, config& gamelist,
 	generator_settings_(disp.video(), _("Settings...")),
 	password_button_(disp.video(), _("Set Password...")),
 	choose_mods_(disp.video(), _("Modifications...")),
-	choose_campaign_(disp.video(), _("Campaign")),
+	switch_games_list_(disp.video(), _("Switch to Campaigns")),
 	era_combo_(disp, std::vector<std::string>()),
 	vision_combo_(disp, std::vector<std::string>()),
 	name_entry_(disp.video(), 32),
@@ -122,69 +123,7 @@ create::create(game_display& disp, const config &cfg, chat& c, config& gamelist,
 
 	DBG_MP << "constructing multiplayer create dialog" << std::endl;
 
-	// Add the 'load game' option
-	std::string markup_txt = "`~";
-	std::string help_sep = " ";
-	help_sep[0] = HELP_STRING_SEPARATOR;
-	std::string menu_help_str = help_sep + _("Load Game");
-	map_options_.push_back(markup_txt + _("Load Game...") + menu_help_str);
-
-	// Treat the Load game option as a scenario
-	config load_game_info;
-	load_game_info["id"] = "multiplayer_load_game";
-	load_game_info["name"] = "Load Game";
-	dependency_manager_.insert_element(depcheck::SCENARIO, load_game_info, 0);
-	options_manager_.insert_element(options::SCENARIO, load_game_info, 0);
-
-
-	// User maps
-	get_files_in_dir(get_user_data_dir() + "/editor/maps",&user_maps_,NULL,FILE_NAME_ONLY);
-
-	size_t i = 0;
-	for(i = 0; i < user_maps_.size(); i++)
-	{
-		menu_help_str = help_sep + user_maps_[i];
-		map_options_.push_back(user_maps_[i] + menu_help_str);
-
-		// Since user maps are treated as scenarios,
-		// some dependency info is required
-		config depinfo;
-
-		depinfo["id"] = user_maps_[i];
-		depinfo["name"] = user_maps_[i];
-
-		dependency_manager_.insert_element(depcheck::SCENARIO, depinfo, i+1);
-
-		// Same with options
-		// FIXME: options::elem_type duplicates depcheck::component_type
-		//        Perhaps they should me merged?
-		const config& optinfo = depinfo;
-
-		options_manager_.insert_element(options::SCENARIO, optinfo, i+1);
-	}
-
-	// Standard maps
-	i = 0;
-	BOOST_FOREACH(const config &j, cfg.child_range("multiplayer"))
-	{
-		if (j["allow_new_game"].to_bool(true))
-		{
-			std::string name = j["name"];
-			menu_help_str = help_sep + name;
-			map_options_.push_back(name + menu_help_str);
-			map_index_.push_back(i);
-		}
-		++i;
-	}
-
-	// Create the scenarios menu
-	maps_menu_.set_items(map_options_);
-	if (size_t(preferences::map()) < map_options_.size()) {
-		maps_menu_.move_selection(preferences::map());
-		dependency_manager_.try_scenario_by_index(preferences::map(), true);
-		options_manager_.set_scenario_by_index(preferences::map());
-	}
-	maps_menu_.set_numeric_keypress_selection(false);
+	set_maps_menu(true);
 
 	turns_slider_.set_min(settings::turns_min);
 	turns_slider_.set_max(settings::turns_max);
@@ -400,12 +339,48 @@ void create::process_event()
 	SDL_GetMouseState(&mousex,&mousey);
 	tooltips::process(mousex, mousey);
 
+
 	if(cancel_game_.pressed()) {
 		set_result(QUIT);
 		return;
 	}
 
 	if(launch_game_.pressed() || maps_menu_.double_clicked()) {
+		if(campaigns_menu_ && maps_menu_.selection()) {
+			campaign_type = "scenario";
+
+			// select difficulty level
+			const std::string difficulty_descriptions = parameters_.scenario_data["difficulty_descriptions"];
+			std::vector<std::string> difficulty_options = utils::split(difficulty_descriptions, ';');
+			const std::vector<std::string> difficulties = utils::split(parameters_.scenario_data["difficulties"]);
+
+			std::string dif_def;
+			if(difficulties.empty() == false) {
+				int difficulty = 0;
+				if(difficulty_options.size() != difficulties.size()) {
+					difficulty_options.resize(difficulties.size());
+					std::copy(difficulties.begin(),difficulties.end(),difficulty_options.begin());
+				}
+
+				gui2::tcampaign_difficulty dlg(difficulty_options);
+				dlg.show(disp().video());
+
+				if(dlg.selected_index() == -1) {
+					return;
+				}
+				difficulty = dlg.selected_index();
+				dif_def = difficulties[difficulty];
+			}
+
+			game_config::scoped_preproc_define difficulty_define(dif_def);
+			game_config::scoped_preproc_define campaign_define(parameters_.scenario_data["define"].str());
+			game_config::scoped_preproc_define multiplayer("MULTIPLAYER");
+			mp::gcontr->load_game_cfg();
+
+			const config &level = game_config().find_child("scenario", "id", parameters_.scenario_data["first_scenario"]);
+			parameters_.scenario_data = level;
+		}
+
 		// check if the map is valid
 		const std::string& map_data = parameters_.scenario_data["map_data"];
 		util::unique_ptr<gamemap> map;
@@ -453,64 +428,13 @@ void create::process_event()
 		}
 	}
 
-	bool map_changed = map_selection_ != maps_menu_.selection();
-	std::string first_campaign_scenario;
+	bool force_map_change = false;
+	if(switch_games_list_.pressed()) {
+		force_map_change = true;
 
-	if(choose_campaign_.pressed()) {
-		map_changed = true;
-		campaign_type = "scenario";
+		set_maps_menu();
 
-		// select a campaign
-		const config::const_child_itors &ci = game_config().child_range("campaign");
-		std::vector<config> campaigns(ci.first, ci.second);
-		if(campaigns.begin() == campaigns.end()) {
-			gui2::show_error_message(disp().video(), _("No campaigns are available.\n"));
-			return;
-		}
-		int campaign_num = -1;
-		gui2::tcampaign_selection dlg(campaigns);
-		try {
-			dlg.show(disp().video());
-		} catch(twml_exception& e) {
-			e.show(disp());
-			return;
-		}
-		if(dlg.get_retval() != gui2::twindow::OK) {
-			return;
-		}
-		campaign_num = dlg.get_choice();
-
-		const config &campaign = campaigns[campaign_num];
-		first_campaign_scenario = campaign["first_scenario"].str();
-
-		// select difficulty level
-		const std::string difficulty_descriptions = campaign["difficulty_descriptions"];
-		std::vector<std::string> difficulty_options = utils::split(difficulty_descriptions, ';');
-		const std::vector<std::string> difficulties = utils::split(campaign["difficulties"]);
-
-		std::string dif_def;
-		if(difficulties.empty() == false) {
-			int difficulty = 0;
-			if(difficulty_options.size() != difficulties.size()) {
-				difficulty_options.resize(difficulties.size());
-				std::copy(difficulties.begin(),difficulties.end(),difficulty_options.begin());
-			}
-
-			gui2::tcampaign_difficulty dlg(difficulty_options);
-			dlg.show(disp().video());
-
-			if(dlg.selected_index() == -1) {
-				return;
-			}
-			difficulty = dlg.selected_index();
-			dif_def = difficulties[difficulty];
-		}
-
-		// reload configs
-		game_config::scoped_preproc_define difficulty_define(dif_def);
-		game_config::scoped_preproc_define campaign_define(campaign["define"].str());
-		game_config::scoped_preproc_define multiplayer("MULTIPLAYER");
-		mp::gcontr->load_game_cfg();
+		switch_games_list_.set_label((campaigns_menu_) ? "Switch to Maps" : "Switch to Campaigns");
 	}
 
 	// Turns per game
@@ -594,6 +518,7 @@ void create::process_event()
 		synchronize_selections();
 	}
 
+	bool map_changed = (map_selection_ != maps_menu_.selection()) || force_map_change;
 	map_selection_ = maps_menu_.selection();
 
 	if (map_changed) {
@@ -622,7 +547,8 @@ void create::process_event()
 			assert(index < map_index_.size());
 			index = map_index_[index];
 
-			config::const_child_itors levels = game_config().child_range("multiplayer");
+			const std::string game_type = (campaigns_menu_) ? "campaign" : "multiplayer";
+			config::const_child_itors levels = game_config().child_range(game_type);
 			for (; index > 0; --index) {
 				if (levels.first == levels.second) break;
 				++levels.first;
@@ -630,7 +556,7 @@ void create::process_event()
 
 			if (levels.first != levels.second)
 			{
-				const config &level = (!first_campaign_scenario.empty()) ? game_config().find_child("scenario", "id", first_campaign_scenario) : *levels.first;
+				const config &level = *levels.first;
 				parameters_.scenario_data = level;
 				std::string map_data = level["map_data"];
 
@@ -709,7 +635,13 @@ void create::process_event()
 			side["controller"] = "human";
 		}
 
-		if(map.get() != NULL) {
+		if(!parameters_.scenario_data["image"].empty()) {
+			const std::string &label = parameters_.scenario_data["image"];
+			const surface image(image::getImage(minimap_rect_.w, minimap_rect_.h, label));
+			SDL_Color back_color = {0,0,0,255};
+			draw_centered_on_background(image, minimap_rect_, back_color, video().getSurface());
+		}
+		else if(map.get() != NULL) {
 			const surface mini(image::getMinimap(minimap_rect_.w,minimap_rect_.h,*map,0));
 			SDL_Color back_color = {0,0,0,255};
 			draw_centered_on_background(mini, minimap_rect_, back_color, video().getSurface());
@@ -790,6 +722,87 @@ void create::process_event()
 	}
 }
 
+void create::set_maps_menu(bool first_time)
+{
+	campaigns_menu_ = !campaigns_menu_;
+
+	map_options_.clear();
+	map_index_.clear();
+
+	std::string markup_txt = "`~";
+	std::string help_sep = " ";
+	help_sep[0] = HELP_STRING_SEPARATOR;
+	std::string menu_help_str;
+
+	menu_help_str = help_sep + _("Load Game");
+	map_options_.push_back(markup_txt + _("Load Game...") + menu_help_str);
+
+	// Treat the Load game option as a scenario
+	config load_game_info;
+	load_game_info["id"] = "multiplayer_load_game";
+	load_game_info["name"] = "Load Game";
+
+	if(first_time) {
+		dependency_manager_.insert_element(depcheck::SCENARIO, load_game_info, 0);
+		options_manager_.insert_element(options::SCENARIO, load_game_info, 0);
+	}
+
+	size_t i;
+
+	if(!campaigns_menu_) {
+		// User maps
+		get_files_in_dir(get_user_data_dir() + "/editor/maps",&user_maps_,NULL,FILE_NAME_ONLY);
+
+		i = 0;
+		for(i = 0; i < user_maps_.size(); i++)
+		{
+			menu_help_str = help_sep + user_maps_[i];
+			map_options_.push_back(user_maps_[i] + menu_help_str);
+
+			if(first_time) {
+				// Since user maps are treated as scenarios,
+				// some dependency info is required
+				config depinfo;
+
+				depinfo["id"] = user_maps_[i];
+				depinfo["name"] = user_maps_[i];
+
+				dependency_manager_.insert_element(depcheck::SCENARIO, depinfo, i+1);
+
+				// Same with options
+				// FIXME: options::elem_type duplicates depcheck::component_type
+				//        Perhaps they should me merged?
+				const config& optinfo = depinfo;
+
+				options_manager_.insert_element(options::SCENARIO, optinfo, i+1);
+			}
+		}
+	}
+
+	// Standard maps
+	i = 0;
+	const std::string game_type = (campaigns_menu_) ? "campaign" : "multiplayer";
+	BOOST_FOREACH(const config &j, game_config().child_range(game_type))
+	{
+		if (j["allow_new_game"].to_bool(true) || campaigns_menu_)
+		{
+			std::string name = j["name"];
+			menu_help_str = help_sep + name;
+			map_options_.push_back(name + menu_help_str);
+			map_index_.push_back(i);
+		}
+		++i;
+	}
+
+	maps_menu_.set_items(map_options_);
+	if (size_t(preferences::map()) < map_options_.size()) {
+		maps_menu_.move_selection(preferences::map());
+		dependency_manager_.try_scenario_by_index(preferences::map(), true);
+		options_manager_.set_scenario_by_index(preferences::map());
+	}
+	maps_menu_.set_numeric_keypress_selection(false);
+}
+
 void create::hide_children(bool hide)
 {
 	DBG_MP << (hide ? "hiding" : "showing" ) << " children widgets" << std::endl;
@@ -837,7 +850,7 @@ void create::hide_children(bool hide)
 
 	era_combo_.hide(hide);
 	choose_mods_.hide(hide);
-	choose_campaign_.hide(hide);
+	switch_games_list_.hide(hide);
 	password_button_.hide(hide);
 	vision_combo_.hide(hide);
 	name_entry_.hide(hide);
@@ -921,9 +934,6 @@ void create::layout_children(const SDL_Rect& rect)
 	ypos += era_combo_.height() + border_size;
 	choose_mods_.set_location(xpos, ypos);
 	ypos += choose_mods_.height() + border_size;
-	ypos += 20;
-	choose_campaign_.set_location(xpos, ypos);
-	ypos += choose_campaign_.height() + border_size;
 	if(!local_players_only_) {
 		password_button_.set_location(xpos, ypos);
 		ypos += password_button_.height() + border_size;
@@ -939,6 +949,8 @@ void create::layout_children(const SDL_Rect& rect)
 	// Second column: map menu
 	ypos = ypos_columntop;
 	xpos += minimap_width + column_border_size;
+	switch_games_list_.set_location(xpos, ypos);
+	ypos += switch_games_list_.height() + border_size;
 	map_label_.set_location(xpos, ypos);
 	ypos += map_label_.height() + border_size;
 

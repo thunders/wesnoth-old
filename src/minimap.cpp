@@ -148,4 +148,11 @@ surface getMinimap(int w, int h, const gamemap &map, const team *vw)
 
 	return minimap;
 }
+
+surface getImage(int w, int h, const std::string &label)
+{
+	surface image(image::get_image(image::locator(label)));
+
+	return scale_surface(image, w, h);
+}
 }

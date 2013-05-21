@@ -15,6 +15,7 @@
 #define MINIMAP_HPP_INCLUDED
 
 #include <cstddef>
+#include <string>
 
 class gamemap;
 struct surface;
@@ -24,6 +25,8 @@ namespace image {
 	///function to create the minimap for a given map
 	///the surface returned must be freed by the user
 	surface getMinimap(int w, int h, const gamemap &map_, const team *vm = NULL);
+
+	surface getImage(int w, int h, const std::string &label);
 }
 
 #endif

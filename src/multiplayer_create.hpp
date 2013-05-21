@@ -44,9 +44,12 @@ protected:
 
 private:
 
+	void set_maps_menu(bool first_time = false);
+
 	void synchronize_selections();
 
 	bool local_players_only_;
+	bool campaigns_menu_;
 
 	tooltips::manager tooltip_manager_;
 	int era_selection_;
@@ -103,7 +106,7 @@ private:
 	gui::button generator_settings_;
 	gui::button password_button_;
 	gui::button choose_mods_;
-	gui::button choose_campaign_;
+	gui::button switch_games_list_;
 
 	gui::combo era_combo_;
 	gui::combo vision_combo_;

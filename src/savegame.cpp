@@ -705,7 +705,16 @@ void loadgame::fill_mplevel_config(config& level){
 
 	// If we have a start of scenario MP campaign scenario the snapshot
 	// is empty the starting position contains the wanted info.
-	const config& start_data = !gamestate_.snapshot.empty() ? gamestate_.snapshot : gamestate_.replay_start();
+	const config* temp;
+	if (!gamestate_.snapshot.empty()) {
+		temp = &gamestate_.snapshot;
+	} else if (!gamestate_.replay_start().empty()) {
+		temp = &gamestate_.replay_start();
+	} else {
+		temp = &gamestate_.carryover_sides_start;
+	}
+
+	const config& start_data = *temp;
 
 	level.add_child("map", start_data.child_or_empty("map"));
 	level["id"] = start_data["id"];
@@ -715,6 +724,20 @@ void loadgame::fill_mplevel_config(config& level){
 	// Probably not needed.
 	level["turn"] = start_data["turn_at"];
 	level["turn_at"] = start_data["turn_at"];
+
+	const config& temp2 = game_config_.find_child("multiplayer", "id",
+		gamestate_.carryover_sides_start["next_scenario"]);
+	if (!temp) {
+		// TODO
+	}
+
+	// TODO
+	if (gamestate_.snapshot.empty() && gamestate_.replay_start().empty()) {
+		level.remove_child("map", 0);
+		level.add_child("map", temp2.child_or_empty("map"));
+		level["id"] = temp2["id"];
+		level["name"] = temp2["name"];
+	}
 
 	level.add_child("multiplayer", gamestate_.mp_settings().to_config());
 
@@ -726,6 +749,7 @@ void loadgame::fill_mplevel_config(config& level){
 			c.merge_with(start_data);
 		} else {
 			level.add_child("replay_start") = start_data;
+			level.child("replay_start").inherit_from(temp2);
 		}
 		level.add_child("snapshot") = config();
 	} else {
